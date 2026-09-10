@@ -20,6 +20,7 @@
     --habit-tint: rgba(69,179,157,0.10);
     --task: #d8a13f;
     --task-tint: rgba(216,161,63,0.10);
+    --taskdone: #5d6672;
     --dead: #6b7480;
     --alert: #d4664e;
   }
@@ -33,8 +34,15 @@
   }
   .wrap { max-width: 560px; margin: 0 auto; padding: 0 16px; }
 
-  /* ---- 上部バー ---- */
-  .topbar { display: flex; justify-content: flex-end; padding: 10px 0 0; }
+  /* ---- 上部 ---- */
+  .topbar { display: flex; justify-content: space-between; align-items: center; padding: 10px 0 0; }
+  .seg { display: flex; background: var(--surface); border-radius: 9px; padding: 3px; }
+  .seg button {
+    border: none; background: none; color: var(--faint);
+    font-family: inherit; font-size: 13px; padding: 6px 14px;
+    border-radius: 7px; cursor: pointer;
+  }
+  .seg button.on { background: var(--surface-2); color: var(--text); }
   .menubtn {
     width: 38px; height: 38px; border: none; border-radius: 10px;
     background: none; color: var(--muted); font-size: 19px; cursor: pointer;
@@ -47,19 +55,16 @@
     color: #eda58f; font-size: 13.5px; cursor: pointer;
   }
 
-  /* ---- 日付 ---- */
   .datebar { display: flex; align-items: center; justify-content: space-between; padding: 10px 0 12px; }
   .navbtn {
     width: 38px; height: 38px; border: none; border-radius: 10px;
     background: var(--surface); color: var(--muted); font-size: 17px; cursor: pointer;
   }
   .navbtn:active { background: var(--surface-2); }
-  .navbtn:disabled { opacity: .25; }
   .datelabel { text-align: center; }
-  .datelabel .d { font-size: 21px; font-weight: 600; }
-  .datelabel .sub { font-size: 12px; color: var(--faint); margin-top: 1px; }
+  .datelabel .d { font-size: 20px; font-weight: 600; }
+  .datelabel .sub { font-size: 12px; color: var(--faint); margin-top: 1px; min-height: 18px; }
 
-  /* ---- サマリー ---- */
   .summary {
     background: var(--surface); border-radius: 12px; padding: 13px 15px;
     display: flex; flex-direction: column; gap: 7px; font-size: 13px; color: var(--muted);
@@ -70,7 +75,6 @@
 
   h2 { font-size: 12.5px; font-weight: 600; color: var(--faint); margin: 24px 0 9px; }
 
-  /* ---- 行 ---- */
   .item {
     display: flex; align-items: flex-start; gap: 12px;
     background: var(--surface); border-left: 3px solid transparent;
@@ -95,24 +99,54 @@
   .title { font-size: 15px; }
   .item.done .title { color: var(--faint); text-decoration: line-through; }
   .meta { font-size: 11.5px; color: var(--faint); margin-top: 2px; }
-  .detail {
-    font-size: 12.5px; color: var(--muted); margin-top: 5px;
-    white-space: pre-wrap; word-break: break-word;
-  }
+  .detail { font-size: 12.5px; color: var(--muted); margin-top: 5px; white-space: pre-wrap; word-break: break-word; }
   .due { color: var(--alert); }
 
-  /* ---- 2回タップの削除 ---- */
   .del {
     flex: 0 0 auto; background: none; border: 1px solid transparent; border-radius: 7px;
     color: var(--faint); font-size: 16px; padding: 3px 8px;
     font-family: inherit; cursor: pointer; white-space: nowrap;
   }
-  .del.armed {
-    font-size: 12px; color: var(--alert);
-    border-color: rgba(212,102,78,.5); background: rgba(212,102,78,.1);
-  }
-
+  .del.armed { font-size: 12px; color: var(--alert); border-color: rgba(212,102,78,.5); background: rgba(212,102,78,.1); }
   .empty { color: var(--faint); font-size: 13px; padding: 6px 2px 2px; }
+
+  /* ---- 週表示 ---- */
+  .wrow {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--surface); border-radius: 9px;
+    padding: 12px 14px; margin-bottom: 7px; cursor: pointer;
+    border-left: 3px solid transparent;
+  }
+  .wrow.today { border-left-color: var(--task); }
+  .wrow.past  { opacity: .78; }
+  .wday { width: 52px; flex: 0 0 52px; }
+  .wday .n { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .wday .w { font-size: 11px; color: var(--faint); }
+  .wmid { flex: 1; min-width: 0; }
+  .wmid .t { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .wbar { height: 5px; background: var(--surface-2); border-radius: 3px; margin-top: 7px; display: flex; overflow: hidden; }
+  .wbar i { display: block; height: 100%; }
+  .wbar .fin  { background: var(--taskdone); }
+  .wbar .left { background: var(--task); }
+
+  /* ---- 月表示 ---- */
+  .mhead, .mgrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .mhead div { text-align: center; font-size: 11px; color: var(--faint); padding-bottom: 6px; }
+  .cell {
+    aspect-ratio: 1 / 1.15; border-radius: 8px; padding: 5px 4px 4px;
+    background: var(--surface); border: 1px solid transparent;
+    display: flex; flex-direction: column; align-items: center; cursor: pointer;
+  }
+  .cell.other { opacity: .3; }
+  .cell.today { border-color: var(--task); }
+  .cell .n { font-size: 13px; font-variant-numeric: tabular-nums; }
+  .cell .c { font-size: 9.5px; color: var(--faint); margin-top: 1px; font-variant-numeric: tabular-nums; }
+  .cell .mb { width: 82%; height: 4px; background: var(--surface-2); border-radius: 2px; margin-top: auto; display: flex; overflow: hidden; }
+  .cell .mb i { display: block; height: 100%; }
+  .cell .mb .fin  { background: var(--taskdone); }
+  .cell .mb .left { background: var(--task); }
+  .legend { margin-top: 14px; font-size: 11.5px; color: var(--faint); line-height: 1.8; }
+  .sw { display: inline-block; width: 9px; height: 9px; border-radius: 2px; vertical-align: -1px; margin-right: 4px; }
 
   /* ---- 追加ボタン ---- */
   .fab {
@@ -134,12 +168,8 @@
   }
   .panel.open { transform: translateX(0); }
   @media (prefers-reduced-motion: reduce) { .panel { transition: none; } }
-  .panelhead {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 0 6px;
-  }
+  .panelhead { display: flex; align-items: center; justify-content: space-between; padding: 14px 0 6px; }
   .panelhead h1 { font-size: 17px; font-weight: 600; }
-
   .stats { display: flex; gap: 9px; }
   .stat { flex: 1; background: var(--surface); border-radius: 11px; padding: 13px 14px; }
   .stat .k { font-size: 11.5px; color: var(--faint); }
@@ -147,7 +177,6 @@
   .stat .n { font-size: 11.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
   .bar { height: 3px; background: var(--surface-2); border-radius: 2px; margin-top: 9px; overflow: hidden; }
   .bar i { display: block; height: 100%; background: var(--habit-daily); border-radius: 2px; }
-
   .lineBtn {
     width: 100%; padding: 12px; margin-top: 8px;
     background: none; border: 1px solid var(--line); border-radius: 10px;
@@ -169,7 +198,8 @@
     padding: 20px 18px calc(env(safe-area-inset-bottom) + 20px);
     max-height: 88vh; overflow-y: auto;
   }
-  .sheetbody h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .sheetbody h3 { font-size: 16px; font-weight: 600; }
+  .sheetsub { font-size: 12px; color: var(--faint); margin-top: 3px; }
   label { display: block; font-size: 12px; color: var(--muted); margin: 13px 0 5px; }
   input, select, textarea {
     width: 100%; padding: 11px 12px;
@@ -192,7 +222,14 @@
 <body>
 
 <div class="wrap">
-  <div class="topbar"><button class="menubtn" id="menuBtn" aria-label="メニュー">☰</button></div>
+  <div class="topbar">
+    <div class="seg">
+      <button data-mode="day">日</button>
+      <button data-mode="week">週</button>
+      <button data-mode="month">月</button>
+    </div>
+    <button class="menubtn" id="menuBtn" aria-label="メニュー">☰</button>
+  </div>
   <div id="alertBar"></div>
 
   <div class="datebar">
@@ -204,18 +241,45 @@
     <button class="navbtn" id="next">›</button>
   </div>
 
-  <div class="summary">
-    <div class="row"><span>タスク</span><span class="val" id="sumCount"></span></div>
-    <div class="row"><span>所要時間</span><span class="val" id="sumTime"></span></div>
-    <div class="row"><span>習慣を全部やる場合</span><span class="val" id="sumHabitTime"></span></div>
+  <!-- 日表示 -->
+  <div id="dayView">
+    <div class="summary">
+      <div class="row"><span>タスク</span><span class="val" id="sumCount"></span></div>
+      <div class="row"><span>所要時間</span><span class="val" id="sumTime"></span></div>
+      <div class="row"><span>習慣を全部やる場合</span><span class="val" id="sumHabitTime"></span></div>
+    </div>
+    <div class="locked" id="lockNote"></div>
+    <h2>習慣</h2>
+    <div id="habitList"></div>
+    <h2>タスク</h2>
+    <div id="taskList"></div>
   </div>
-  <div class="locked" id="lockNote"></div>
 
-  <h2>習慣</h2>
-  <div id="habitList"></div>
+  <!-- 週表示 -->
+  <div id="weekView" style="display:none">
+    <div class="summary">
+      <div class="row"><span>今週のタスク</span><span class="val" id="wkCount"></span></div>
+      <div class="row"><span>所要時間</span><span class="val" id="wkTime"></span></div>
+    </div>
+    <div id="weekRows" style="margin-top:16px"></div>
+  </div>
 
-  <h2>タスク</h2>
-  <div id="taskList"></div>
+  <!-- 月表示 -->
+  <div id="monthView" style="display:none">
+    <div class="summary">
+      <div class="row"><span>今月のタスク</span><span class="val" id="moCount"></span></div>
+      <div class="row"><span>所要時間</span><span class="val" id="moTime"></span></div>
+    </div>
+    <div class="mhead" style="margin-top:16px">
+      <div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div><div>日</div>
+    </div>
+    <div class="mgrid" id="monthGrid"></div>
+    <div class="legend">
+      <span class="sw" style="background:var(--task)"></span>これからやるタスクの時間　
+      <span class="sw" style="background:var(--taskdone)"></span>終わったタスクの時間<br>
+      バーの長さは4時間で最大。日付をタップするとその日を開きます。
+    </div>
+  </div>
 </div>
 
 <div class="fab"><button id="addTaskBtn">タスクを追加</button></div>
@@ -227,26 +291,16 @@
       <h1>メニュー</h1>
       <button class="menubtn" id="panelClose" aria-label="閉じる">✕</button>
     </div>
-
     <h2>達成率</h2>
     <div class="stats">
-      <div class="stat">
-        <div class="k">今週</div><div class="v" id="wPct"></div>
-        <div class="n" id="wNum"></div><div class="bar"><i id="wBar"></i></div>
-      </div>
-      <div class="stat">
-        <div class="k">今月</div><div class="v" id="mPct"></div>
-        <div class="n" id="mNum"></div><div class="bar"><i id="mBar"></i></div>
-      </div>
+      <div class="stat"><div class="k">今週</div><div class="v" id="wPct"></div><div class="n" id="wNum"></div><div class="bar"><i id="wBar"></i></div></div>
+      <div class="stat"><div class="k">今月</div><div class="v" id="mPct"></div><div class="n" id="mNum"></div><div class="bar"><i id="mBar"></i></div></div>
     </div>
-
     <h2 id="deadHead">保留中のタスク</h2>
     <div id="deadList"></div>
-
     <h2>習慣</h2>
     <div id="habitManage"></div>
     <button class="lineBtn" id="addHabitBtn">習慣を追加</button>
-
     <h2>データ</h2>
     <button class="lineBtn" id="exportBtn">データを書き出す</button>
     <button class="lineBtn danger" id="resetBtn">記録を全部消す</button>
@@ -257,20 +311,17 @@
 <div class="sheet" id="taskSheet">
   <div class="sheetbody">
     <h3 id="tHead">タスクを追加</h3>
+    <div class="sheetsub" id="tSub"></div>
     <label for="tTitle">やること</label>
     <input id="tTitle" placeholder="例：簿記の問題を解く">
     <label for="tDetail">詳細</label>
     <textarea id="tDetail" placeholder="手順、参考リンク、気をつけることなど"></textarea>
     <div class="two">
-      <div>
-        <label for="tMin">所要時間（分）</label>
-        <input id="tMin" type="number" value="2" min="1">
-      </div>
-      <div>
-        <label for="tDue">締切（任意）</label>
-        <input id="tDue" type="date">
-      </div>
+      <div><label for="tMin">所要時間（分）</label><input id="tMin" type="number" value="2" min="1"></div>
+      <div><label for="tDue">締切（任意）</label><input id="tDue" type="date"></div>
     </div>
+    <label for="tDate">やる日</label>
+    <input id="tDate" type="date">
     <div class="sheetbtns">
       <button class="cancel" data-close="taskSheet">やめる</button>
       <button class="save" id="tSave">保存する</button>
@@ -287,10 +338,7 @@
     <div class="two">
       <div>
         <label for="hMode">頻度</label>
-        <select id="hMode">
-          <option value="daily">毎日</option>
-          <option value="weekly">週に何回か</option>
-        </select>
+        <select id="hMode"><option value="daily">毎日</option><option value="weekly">週に何回か</option></select>
       </div>
       <div id="targetWrap" style="display:none">
         <label for="hTarget">週の回数</label>
@@ -311,11 +359,11 @@
 const KEY = 'selfmgmt.v1';
 const BOUNDARY_HOUR = 3, BOUNDARY_MIN = 30;
 const EDIT_DAYS = 3, DUE_SOON = 3;
+const BAR_MAX = 240;               // カレンダーのバーが最大になる分数
 let db;
 
 function load() {
-  try { const raw = localStorage.getItem(KEY); if (raw) { db = JSON.parse(raw); migrate(); return; } }
-  catch (e) {}
+  try { const raw = localStorage.getItem(KEY); if (raw) { db = JSON.parse(raw); migrate(); return; } } catch (e) {}
   db = seed(); save();
 }
 function migrate() {
@@ -348,25 +396,20 @@ function todayStr() {
   n.setHours(n.getHours() - BOUNDARY_HOUR, n.getMinutes() - BOUNDARY_MIN);
   return fmt(n);
 }
-function fmt(d) {
-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-}
-function parse(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
-function addDays(s, n) { const d = parse(s); d.setDate(d.getDate() + n); return fmt(d); }
+function fmt(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function parse(s) { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); }
+function addDays(s, n) { const d = parse(s); d.setDate(d.getDate()+n); return fmt(d); }
+function addMonths(s, n) { const d = parse(s); d.setDate(1); d.setMonth(d.getMonth()+n); return fmt(d); }
 function diffDays(a, b) { return Math.round((parse(a) - parse(b)) / 86400000); }
-function mondayOf(s) { const d = parse(s); const w = (d.getDay() + 6) % 7; d.setDate(d.getDate() - w); return fmt(d); }
+function mondayOf(s) { const d = parse(s); const w = (d.getDay()+6)%7; d.setDate(d.getDate()-w); return fmt(d); }
 const WD = ['日','月','火','水','木','金','土'];
-function label(s) {
-  const d = parse(s), g = diffDays(s, todayStr());
-  return {
-    main: (d.getMonth() + 1) + '月' + d.getDate() + '日（' + WD[d.getDay()] + '）',
-    sub: g === 0 ? '今日' : g === -1 ? '昨日' : g === 1 ? '明日' : ''
-  };
-}
-function canEdit(s) { const g = diffDays(todayStr(), s); return g >= 0 && g <= EDIT_DAYS; }
+
+function canCheck(s) { const g = diffDays(todayStr(), s); return g >= 0 && g <= EDIT_DAYS; }  // チェックできる日
+function canPlan(s)  { return diffDays(todayStr(), s) <= EDIT_DAYS; }                        // タスクを置ける日（未来はOK）
 function hm(min) {
+  if (!min) return '0分';
   if (min < 60) return min + '分';
-  const h = Math.floor(min / 60), m = min % 60;
+  const h = Math.floor(min/60), m = min%60;
   return m ? h + '時間' + m + '分' : h + '時間';
 }
 
@@ -384,10 +427,22 @@ function rollover() {
 /* ========== 集計 ========== */
 const loggedOn = d => db.logs[d] || [];
 const isLogged = (h, d) => loggedOn(d).includes(h);
+const tasksOn  = d => db.tasks.filter(x => !x.dead && x.date === d);
+function dayStat(d) {
+  const list = tasksOn(d);
+  const total = list.reduce((s,x) => s + x.minutes, 0);
+  const fin   = list.filter(x => x.done).reduce((s,x) => s + x.minutes, 0);
+  return { n: list.length, done: list.filter(x => x.done).length, total, fin, left: total - fin };
+}
+function rangeStat(days) {
+  return days.map(dayStat).reduce((a,b) => ({
+    n: a.n+b.n, done: a.done+b.done, total: a.total+b.total, fin: a.fin+b.fin, left: a.left+b.left
+  }), { n:0, done:0, total:0, fin:0, left:0 });
+}
 function rate(fromMonday, weeks) {
   let num = 0, den = 0;
   for (let w = 0; w < weeks; w++) {
-    const start = addDays(fromMonday, w * 7);
+    const start = addDays(fromMonday, w*7);
     db.habits.forEach(h => {
       const target = h.mode === 'daily' ? 7 : h.target;
       let hit = 0;
@@ -395,7 +450,7 @@ function rate(fromMonday, weeks) {
       num += Math.min(hit, target); den += target;
     });
   }
-  return { num, den, pct: den ? Math.round(num / den * 100) : 0 };
+  return { num, den, pct: den ? Math.round(num/den*100) : 0 };
 }
 const weekRate = d => rate(mondayOf(d), 1);
 function monthRate(d) {
@@ -414,29 +469,39 @@ function delButton(id, onDelete) {
   b.className = 'del' + (armed === id ? ' armed' : '');
   b.textContent = armed === id ? '削除する' : '×';
   b.onclick = e => {
-    e.stopPropagation();
-    clearTimeout(armTimer);
+    e.stopPropagation(); clearTimeout(armTimer);
     if (armed === id) { armed = null; onDelete(); return; }
-    armed = id;
-    render();
+    armed = id; render();
     armTimer = setTimeout(() => { armed = null; render(); }, 3500);
   };
   return b;
 }
 
 /* ========== 描画 ========== */
+let mode = 'day';
 let view = todayStr();
 
 function render() {
-  const editable = canEdit(view);
-  const L = label(view);
-  document.getElementById('dateMain').textContent = L.main;
-  document.getElementById('dateSub').textContent = L.sub;
-  document.getElementById('next').disabled = diffDays(view, todayStr()) >= 0;
-  document.getElementById('lockNote').textContent = editable ? ''
-    : (diffDays(view, todayStr()) > 0 ? '未来の日は記録できません。' : EDIT_DAYS + '日より前は変更できません。');
+  document.querySelectorAll('.seg button').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
+  document.getElementById('dayView').style.display   = mode === 'day'   ? 'block' : 'none';
+  document.getElementById('weekView').style.display  = mode === 'week'  ? 'block' : 'none';
+  document.getElementById('monthView').style.display = mode === 'month' ? 'block' : 'none';
 
-  /* 習慣 */
+  if (mode === 'day') renderDay();
+  else if (mode === 'week') renderWeek();
+  else renderMonth();
+
+  renderPanel(); renderAlert();
+}
+
+/* ---- 日 ---- */
+function renderDay() {
+  const editable = canCheck(view), d = parse(view), g = diffDays(view, todayStr());
+  document.getElementById('dateMain').textContent = (d.getMonth()+1) + '月' + d.getDate() + '日（' + WD[d.getDay()] + '）';
+  document.getElementById('dateSub').textContent = g === 0 ? '今日' : g === -1 ? '昨日' : g === 1 ? '明日' : '';
+  document.getElementById('lockNote').textContent = editable ? ''
+    : (g > 0 ? 'これからの日です。予定は入れられますが、チェックは当日から。' : EDIT_DAYS + '日より前は変更できません。');
+
   const hl = document.getElementById('habitList'); hl.innerHTML = '';
   if (!db.habits.length) hl.innerHTML = '<div class="empty">習慣はまだありません。メニューから追加できます。</div>';
   db.habits.forEach(h => {
@@ -452,8 +517,7 @@ function render() {
     hl.appendChild(el);
   });
 
-  /* タスク */
-  const list = db.tasks.filter(x => !x.dead && x.date === view);
+  const list = tasksOn(view);
   const tl = document.getElementById('taskList'); tl.innerHTML = '';
   if (!list.length) tl.innerHTML = '<div class="empty">タスクはありません。</div>';
   list.forEach(x => {
@@ -472,17 +536,98 @@ function render() {
     tl.appendChild(el);
   });
 
-  /* サマリー */
-  const doneN = list.filter(x => x.done).length;
-  const total = list.reduce((s, x) => s + x.minutes, 0);
-  const left = list.filter(x => !x.done).reduce((s, x) => s + x.minutes, 0);
-  const hMin = db.habits.filter(h => !isLogged(h.id, view)).reduce((s, h) => s + h.minutes, 0);
-  document.getElementById('sumCount').textContent = doneN + ' / ' + list.length + ' 件';
-  document.getElementById('sumTime').textContent = '残り ' + hm(left) + ' / 合計 ' + hm(total);
+  const s = dayStat(view);
+  const hMin = db.habits.filter(h => !isLogged(h.id, view)).reduce((a,h) => a + h.minutes, 0);
+  document.getElementById('sumCount').textContent = s.done + ' / ' + s.n + ' 件';
+  document.getElementById('sumTime').textContent = '残り ' + hm(s.left) + ' / 合計 ' + hm(s.total);
   document.getElementById('sumHabitTime').textContent = '+ ' + hm(hMin);
+}
 
-  renderPanel();
-  renderAlert();
+/* ---- 週 ---- */
+function renderWeek() {
+  const ws = mondayOf(view), we = addDays(ws, 6);
+  const a = parse(ws), b = parse(we);
+  document.getElementById('dateMain').textContent =
+    (a.getMonth()+1) + '/' + a.getDate() + ' 〜 ' + (b.getMonth()+1) + '/' + b.getDate();
+  document.getElementById('dateSub').textContent = ws === mondayOf(todayStr()) ? '今週' : '';
+
+  const days = []; for (let i = 0; i < 7; i++) days.push(addDays(ws, i));
+  const t = rangeStat(days);
+  document.getElementById('wkCount').textContent = t.done + ' / ' + t.n + ' 件';
+  document.getElementById('wkTime').textContent = '残り ' + hm(t.left) + ' / 合計 ' + hm(t.total);
+
+  const box = document.getElementById('weekRows'); box.innerHTML = '';
+  days.forEach(ds => {
+    const s = dayStat(ds), d = parse(ds), g = diffDays(ds, todayStr());
+    const el = document.createElement('div');
+    el.className = 'wrow' + (g === 0 ? ' today' : g < 0 ? ' past' : '');
+    el.onclick = () => { view = ds; mode = 'day'; render(); window.scrollTo(0,0); };
+    const day = document.createElement('div');
+    day.className = 'wday';
+    day.innerHTML = '<div class="n"></div><div class="w"></div>';
+    day.querySelector('.n').textContent = d.getDate();
+    day.querySelector('.w').textContent = WD[d.getDay()];
+    const mid = document.createElement('div');
+    mid.className = 'wmid';
+    const txt = document.createElement('div');
+    txt.className = 't';
+    txt.textContent = s.n ? s.done + '/' + s.n + '件 ・ ' + hm(s.total) : 'タスクなし';
+    mid.appendChild(txt);
+    if (s.total) mid.appendChild(miniBar(s, 'wbar'));
+    el.append(day, mid);
+    box.appendChild(el);
+  });
+}
+
+/* ---- 月 ---- */
+function renderMonth() {
+  const p = parse(view), y = p.getFullYear(), m = p.getMonth();
+  document.getElementById('dateMain').textContent = y + '年' + (m+1) + '月';
+  const tp = parse(todayStr());
+  document.getElementById('dateSub').textContent = (y === tp.getFullYear() && m === tp.getMonth()) ? '今月' : '';
+
+  const first = fmt(new Date(y, m, 1)), last = fmt(new Date(y, m+1, 0));
+  const inMonth = [];
+  for (let d = first; d <= last; d = addDays(d, 1)) inMonth.push(d);
+  const t = rangeStat(inMonth);
+  document.getElementById('moCount').textContent = t.done + ' / ' + t.n + ' 件';
+  document.getElementById('moTime').textContent = '残り ' + hm(t.left) + ' / 合計 ' + hm(t.total);
+
+  const grid = document.getElementById('monthGrid'); grid.innerHTML = '';
+  let cur = mondayOf(first);
+  const end = mondayOf(last);
+  while (true) {
+    for (let i = 0; i < 7; i++) {
+      const ds = addDays(cur, i), d = parse(ds);
+      const other = d.getMonth() !== m;
+      const s = dayStat(ds);
+      const cell = document.createElement('div');
+      cell.className = 'cell' + (other ? ' other' : '') + (ds === todayStr() ? ' today' : '');
+      if (s.total) {
+        const a = Math.min(0.16, 0.04 + s.total / BAR_MAX * 0.12);
+        cell.style.background = 'linear-gradient(rgba(216,161,63,' + a.toFixed(3) + '),rgba(216,161,63,' + a.toFixed(3) + ')), var(--surface)';
+      }
+      cell.onclick = () => { view = ds; mode = 'day'; render(); window.scrollTo(0,0); };
+      const n = document.createElement('div'); n.className = 'n'; n.textContent = d.getDate();
+      const c = document.createElement('div'); c.className = 'c'; c.textContent = s.n ? s.n + '件' : '';
+      cell.append(n, c, miniBar(s, 'mb'));
+      grid.appendChild(cell);
+    }
+    if (cur >= end) break;
+    cur = addDays(cur, 7);
+  }
+}
+
+function miniBar(s, cls) {
+  const bar = document.createElement('div');
+  bar.className = cls;
+  const scale = Math.min(1, s.total / BAR_MAX);
+  const fin = document.createElement('i'); fin.className = 'fin';
+  const left = document.createElement('i'); left.className = 'left';
+  fin.style.width  = (s.total ? s.fin  / s.total * 100 * scale : 0) + '%';
+  left.style.width = (s.total ? s.left / s.total * 100 * scale : 0) + '%';
+  bar.append(fin, left);
+  return bar;
 }
 
 function checkbox(on, editable, fn) {
@@ -493,8 +638,7 @@ function checkbox(on, editable, fn) {
   return c;
 }
 function bodyBlock(title, meta, detail) {
-  const b = document.createElement('div');
-  b.className = 'body';
+  const b = document.createElement('div'); b.className = 'body';
   const t = document.createElement('div'); t.className = 'title'; t.textContent = title;
   const m = document.createElement('div'); m.className = 'meta'; m.textContent = meta;
   b.append(t, m);
@@ -504,13 +648,13 @@ function bodyBlock(title, meta, detail) {
 function toggleHabit(hid) {
   const arr = db.logs[view] || [];
   const i = arr.indexOf(hid);
-  if (i >= 0) arr.splice(i, 1); else arr.push(hid);
+  if (i >= 0) arr.splice(i,1); else arr.push(hid);
   db.logs[view] = arr;
   if (!arr.length) delete db.logs[view];
   save(); render();
 }
 
-/* ---- メニュー内 ---- */
+/* ---- メニュー ---- */
 function renderPanel() {
   const w = weekRate(view), m = monthRate(view);
   document.getElementById('wPct').textContent = w.pct + '%';
@@ -524,11 +668,9 @@ function renderPanel() {
   document.getElementById('deadHead').textContent = '保留中のタスク（' + dead.length + '）';
   const box = document.getElementById('deadList'); box.innerHTML = '';
   if (!dead.length) box.innerHTML = '<div class="empty">保留中のタスクはありません。</div>';
-  const order = [...dead.filter(x => x.due).sort((a, b) => a.due < b.due ? -1 : 1), ...dead.filter(x => !x.due)];
-  order.forEach(x => {
-    const el = document.createElement('div');
-    el.className = 'item deaditem';
-    let meta = x.minutes + '分' + (x.due ? ' ・ 締切 ' + x.due.slice(5).replace('-', '/') : '');
+  [...dead.filter(x => x.due).sort((a,b) => a.due < b.due ? -1 : 1), ...dead.filter(x => !x.due)].forEach(x => {
+    const el = document.createElement('div'); el.className = 'item deaditem';
+    const meta = x.minutes + '分' + (x.due ? ' ・ 締切 ' + x.due.slice(5).replace('-','/') : '');
     const b = bodyBlock(x.title, meta, x.detail);
     if (x.due && diffDays(x.due, todayStr()) <= DUE_SOON) b.querySelector('.meta').classList.add('due');
     b.onclick = () => openTask(x.id);
@@ -539,8 +681,8 @@ function renderPanel() {
     box.appendChild(el);
   });
 
-  const hm2 = document.getElementById('habitManage'); hm2.innerHTML = '';
-  if (!db.habits.length) hm2.innerHTML = '<div class="empty">習慣はまだありません。</div>';
+  const hbox = document.getElementById('habitManage'); hbox.innerHTML = '';
+  if (!db.habits.length) hbox.innerHTML = '<div class="empty">習慣はまだありません。</div>';
   db.habits.forEach(h => {
     const el = document.createElement('div');
     el.className = 'item ' + (h.mode === 'daily' ? 'habit-daily' : 'habit-weekly');
@@ -548,10 +690,9 @@ function renderPanel() {
       bodyBlock(h.title, h.mode === 'daily' ? '毎日 ・ ' + h.minutes + '分' : '週' + h.target + '回 ・ ' + h.minutes + '分', ''),
       delButton(h.id, () => { db.habits = db.habits.filter(y => y.id !== h.id); save(); render(); })
     );
-    hm2.appendChild(el);
+    hbox.appendChild(el);
   });
 }
-
 function renderAlert() {
   const soon = db.tasks.filter(x => x.dead && x.due && diffDays(x.due, todayStr()) <= DUE_SOON);
   const bar = document.getElementById('alertBar');
@@ -562,8 +703,15 @@ function renderAlert() {
 }
 
 /* ========== 操作 ========== */
-document.getElementById('prev').onclick = () => { view = addDays(view, -1); render(); };
-document.getElementById('next').onclick = () => { if (diffDays(view, todayStr()) < 0) { view = addDays(view, 1); render(); } };
+document.querySelectorAll('.seg button').forEach(b => b.onclick = () => { mode = b.dataset.mode; render(); });
+const step = n => {
+  if (mode === 'day') view = addDays(view, n);
+  else if (mode === 'week') view = addDays(view, n*7);
+  else view = addMonths(view, n);
+  render();
+};
+document.getElementById('prev').onclick = () => step(-1);
+document.getElementById('next').onclick = () => step(1);
 
 const panel = document.getElementById('panel');
 const openPanel = () => { renderPanel(); panel.classList.add('open'); };
@@ -576,8 +724,7 @@ document.body.addEventListener('touchend', e => {
   if (panel.classList.contains('open')) return;
   const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
   if (Math.abs(dx) < 60 || Math.abs(dy) > 50) return;
-  if (dx < 0) { if (diffDays(view, todayStr()) < 0) { view = addDays(view, 1); render(); } }
-  else { view = addDays(view, -1); render(); }
+  step(dx < 0 ? 1 : -1);
 }, { passive: true });
 
 const open = id => document.getElementById(id).classList.add('open');
@@ -589,39 +736,47 @@ document.querySelectorAll('.sheet').forEach(s => s.onclick = e => { if (e.target
 let editingId = null;
 document.getElementById('addTaskBtn').onclick = () => {
   editingId = null;
+  const d = (mode === 'day' && canPlan(view)) ? view : todayStr();
   document.getElementById('tHead').textContent = 'タスクを追加';
+  document.getElementById('tSub').textContent = '';
   document.getElementById('tTitle').value = '';
   document.getElementById('tDetail').value = '';
   document.getElementById('tMin').value = 2;
   document.getElementById('tDue').value = '';
+  document.getElementById('tDate').value = d;
   open('taskSheet');
 };
 function openTask(id) {
   const x = db.tasks.find(t => t.id === id); if (!x) return;
   editingId = id;
   document.getElementById('tHead').textContent = 'タスクを編集';
+  document.getElementById('tSub').textContent = x.dead ? '保留中のタスクです。やる日を入れると復帰します。' : '';
   document.getElementById('tTitle').value = x.title;
   document.getElementById('tDetail').value = x.detail || '';
   document.getElementById('tMin').value = x.minutes;
   document.getElementById('tDue').value = x.due || '';
+  document.getElementById('tDate').value = x.dead ? todayStr() : x.date;
   open('taskSheet');
 }
 document.getElementById('tSave').onclick = () => {
   const title = document.getElementById('tTitle').value.trim();
   if (!title) { document.getElementById('tTitle').focus(); return; }
+  let date = document.getElementById('tDate').value || todayStr();
+  if (!canPlan(date)) { alert(EDIT_DAYS + '日より前の日には置けません。'); return; }
   const detail = document.getElementById('tDetail').value.trim();
   const minutes = Math.max(1, parseInt(document.getElementById('tMin').value) || 2);
   const due = document.getElementById('tDue').value || null;
   if (editingId) {
     const x = db.tasks.find(t => t.id === editingId);
-    Object.assign(x, { title, detail, minutes, due });
+    if (x.dead) { x.dead = false; x.done = false; x.carried = 0; }
+    Object.assign(x, { title, detail, minutes, due, date });
   } else {
-    db.tasks.push({ id: uid(), title, detail, minutes, date: canEdit(view) ? view : todayStr(), done: false, carried: 0, dead: false, due });
+    db.tasks.push({ id: uid(), title, detail, minutes, date, done: false, carried: 0, dead: false, due });
   }
   save(); close('taskSheet'); render();
 };
 
-/* 習慣の追加 */
+/* 習慣 */
 document.getElementById('hMode').onchange = e => {
   document.getElementById('targetWrap').style.display = e.target.value === 'weekly' ? 'block' : 'none';
 };
@@ -635,10 +790,10 @@ document.getElementById('addHabitBtn').onclick = () => {
 document.getElementById('hSave').onclick = () => {
   const title = document.getElementById('hTitle').value.trim();
   if (!title) { document.getElementById('hTitle').focus(); return; }
-  const mode = document.getElementById('hMode').value;
+  const mode2 = document.getElementById('hMode').value;
   db.habits.push({
-    id: uid(), title, mode,
-    target: mode === 'daily' ? 7 : Math.min(7, Math.max(1, parseInt(document.getElementById('hTarget').value) || 3)),
+    id: uid(), title, mode: mode2,
+    target: mode2 === 'daily' ? 7 : Math.min(7, Math.max(1, parseInt(document.getElementById('hTarget').value) || 3)),
     minutes: Math.max(1, parseInt(document.getElementById('hMin').value) || 2)
   });
   save(); close('habitSheet'); render();
@@ -654,12 +809,12 @@ document.getElementById('exportBtn').onclick = () => {
 };
 document.getElementById('resetBtn').onclick = () => {
   if (!confirm('記録をすべて消して最初の状態に戻します。よろしいですか？')) return;
-  localStorage.removeItem(KEY); load(); view = todayStr(); render();
+  localStorage.removeItem(KEY); load(); view = todayStr(); mode = 'day'; render();
 };
 
 /* 起動 */
 load(); rollover(); view = todayStr(); render();
-setInterval(() => { const t = todayStr(); if (diffDays(view, t) > 0) view = t; rollover(); render(); }, 60000);
+setInterval(() => { rollover(); render(); }, 60000);
 </script>
 </body>
 </html>
