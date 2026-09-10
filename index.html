@@ -133,14 +133,19 @@
   .mhead, .mgrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
   .mhead div { text-align: center; font-size: 11px; color: var(--faint); padding-bottom: 6px; }
   .cell {
-    aspect-ratio: 1 / 1.15; border-radius: 8px; padding: 5px 4px 4px;
+    aspect-ratio: 1 / 1.32; border-radius: 8px; padding: 5px 3px 4px;
     background: var(--surface); border: 1px solid transparent;
     display: flex; flex-direction: column; align-items: center; cursor: pointer;
   }
   .cell.other { opacity: .3; }
   .cell.today { border-color: var(--task); }
   .cell .n { font-size: 13px; font-variant-numeric: tabular-nums; }
-  .cell .c { font-size: 9.5px; color: var(--faint); margin-top: 1px; font-variant-numeric: tabular-nums; }
+  .cell .tm {
+    font-size: 10px; color: var(--task); margin-top: 2px;
+    font-variant-numeric: tabular-nums; letter-spacing: -.02em; white-space: nowrap;
+  }
+  .cell .tm.allfin { color: var(--taskdone); }
+  .cell .c { font-size: 9px; color: var(--faint); font-variant-numeric: tabular-nums; }
   .cell .mb { width: 82%; height: 4px; background: var(--surface-2); border-radius: 2px; margin-top: auto; display: flex; overflow: hidden; }
   .cell .mb i { display: block; height: 100%; }
   .cell .mb .fin  { background: var(--taskdone); }
@@ -277,6 +282,7 @@
     <div class="legend">
       <span class="sw" style="background:var(--task)"></span>これからやるタスクの時間　
       <span class="sw" style="background:var(--taskdone)"></span>終わったタスクの時間<br>
+      数字は残り時間（全部終わった日は合計時間を灰色で表示）。2h30 は2時間30分。<br>
       バーの長さは4時間で最大。日付をタップするとその日を開きます。
     </div>
   </div>
@@ -411,6 +417,13 @@ function hm(min) {
   if (min < 60) return min + '分';
   const h = Math.floor(min/60), m = min%60;
   return m ? h + '時間' + m + '分' : h + '時間';
+}
+/* 月表示のマスは狭いので短く書く：45分 → 45分 / 150分 → 2h30 */
+function hmShort(min) {
+  if (!min) return '';
+  if (min < 60) return min + '分';
+  const h = Math.floor(min/60), m = min%60;
+  return m ? h + 'h' + String(m).padStart(2,'0') : h + 'h';
 }
 
 /* ========== 繰り越し ========== */
@@ -609,8 +622,11 @@ function renderMonth() {
       }
       cell.onclick = () => { view = ds; mode = 'day'; render(); window.scrollTo(0,0); };
       const n = document.createElement('div'); n.className = 'n'; n.textContent = d.getDate();
+      const tm = document.createElement('div');
+      tm.className = 'tm' + (s.total && !s.left ? ' allfin' : '');
+      tm.textContent = s.total ? hmShort(s.left || s.total) : '';
       const c = document.createElement('div'); c.className = 'c'; c.textContent = s.n ? s.n + '件' : '';
-      cell.append(n, c, miniBar(s, 'mb'));
+      cell.append(n, tm, c, miniBar(s, 'mb'));
       grid.appendChild(cell);
     }
     if (cur >= end) break;
