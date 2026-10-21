@@ -109,6 +109,43 @@
   }
   .del.armed { font-size: 12px; color: var(--alert); border-color: rgba(212,102,78,.5); background: rgba(212,102,78,.1); }
   .empty { color: var(--faint); font-size: 13px; padding: 6px 2px 2px; }
+  .hint { color: var(--faint); font-size: 11.5px; padding: 4px 2px 0; }
+
+  /* ---- 長押しして日をまたいで動かす ---- */
+  .item.lifted {
+    position: relative; z-index: 5;
+    box-shadow: 0 8px 22px rgba(0,0,0,.5);
+    animation: wiggle .28s ease-in-out infinite alternate;
+    touch-action: none; cursor: grabbing;
+  }
+  @keyframes wiggle {
+    from { transform: rotate(-.7deg) scale(1.03); }
+    to   { transform: rotate(.7deg)  scale(1.03); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .item.lifted { animation: none; }
+  }
+  .dragbadge {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    top: calc(env(safe-area-inset-top) + 12px);
+    background: var(--task); color: #221a08;
+    font-size: 13px; font-weight: 600; padding: 9px 16px;
+    border-radius: 999px; z-index: 50; pointer-events: none;
+    display: none; white-space: nowrap;
+    box-shadow: 0 6px 18px rgba(0,0,0,.45);
+  }
+  .dragbadge.show { display: block; }
+  .dragbadge.stay { background: var(--surface-2); color: var(--muted); }
+  .toast {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: calc(env(safe-area-inset-bottom) + 86px);
+    background: var(--surface-2); color: var(--text);
+    border: 1px solid var(--line);
+    font-size: 13px; padding: 10px 16px; border-radius: 10px;
+    z-index: 50; pointer-events: none; opacity: 0;
+    transition: opacity .18s ease; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
 
   /* ---- 週表示 ---- */
   .wrow {
@@ -288,6 +325,9 @@
   </div>
 </div>
 
+<div class="dragbadge" id="dragBadge"></div>
+<div class="toast" id="toast"></div>
+
 <div class="fab"><button id="addTaskBtn">タスクを追加</button></div>
 
 <!-- メニュー -->
@@ -374,7 +414,10 @@ function load() {
 }
 function migrate() {
   db.habits ||= []; db.tasks ||= []; db.logs ||= {};
-  db.tasks.forEach(t => { if (t.detail === undefined) t.detail = ''; });
+  db.tasks.forEach(t => {
+    if (t.detail === undefined) t.detail = '';
+    if (t.pushed === undefined) t.pushed = 0;   // 自分で先送りした回数
+  });
 }
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify(db)); }
@@ -389,8 +432,8 @@ function seed() {
     ],
     logs: {},
     tasks: [
-      { id: uid(), title: '簿記2級の問題演習', detail: '第3問の精算表まで', minutes: 45, date: t, done: false, carried: 0, dead: false, due: null },
-      { id: uid(), title: '図書館に本を返す', detail: '', minutes: 2, date: t, done: false, carried: 0, dead: false, due: addDays(t, 2) }
+      { id: uid(), title: '簿記2級の問題演習', detail: '第3問の精算表まで', minutes: 45, date: t, done: false, carried: 0, pushed: 0, dead: false, due: null },
+      { id: uid(), title: '図書館に本を返す', detail: '', minutes: 2, date: t, done: false, carried: 0, pushed: 0, dead: false, due: addDays(t, 2) }
     ]
   };
 }
@@ -534,13 +577,11 @@ function renderDay() {
   const tl = document.getElementById('taskList'); tl.innerHTML = '';
   if (!list.length) tl.innerHTML = '<div class="empty">タスクはありません。</div>';
   list.forEach(x => {
-    let meta = x.minutes + '分';
-    if (x.carried) meta += ' ・ 繰り越し';
-    if (x.due) meta += ' ・ 締切 ' + x.due.slice(5).replace('-', '/');
     const el = document.createElement('div');
     el.className = 'item task' + (x.done ? ' done' : '');
-    const body = bodyBlock(x.title, meta, x.detail);
-    body.onclick = () => openTask(x.id);
+    el.dataset.id = x.id;
+    const body = bodyBlock(x.title, taskMeta(x), x.detail);
+    body.onclick = () => { if (Date.now() - lastDragEnd < 350) return; openTask(x.id); };
     el.append(
       checkbox(x.done, editable, () => { x.done = !x.done; save(); render(); }),
       body,
@@ -548,6 +589,12 @@ function renderDay() {
     );
     tl.appendChild(el);
   });
+  if (list.length) {
+    const hint = document.createElement('div');
+    hint.className = 'hint';
+    hint.textContent = '長押ししてから横にドラッグすると、別の日に移せます。';
+    tl.appendChild(hint);
+  }
 
   const s = dayStat(view);
   const hMin = db.habits.filter(h => !isLogged(h.id, view)).reduce((a,h) => a + h.minutes, 0);
@@ -646,6 +693,13 @@ function miniBar(s, cls) {
   return bar;
 }
 
+function taskMeta(x) {
+  let m = x.minutes + '分';
+  if (x.carried) m += ' ・ 繰り越し';
+  if (x.pushed)  m += ' ・ 先送り' + x.pushed + '回';
+  if (x.due)     m += ' ・ 締切 ' + x.due.slice(5).replace('-', '/');
+  return m;
+}
 function checkbox(on, editable, fn) {
   const c = document.createElement('div');
   c.className = 'check' + (on ? ' on' : '') + (editable ? '' : ' disabled');
@@ -686,8 +740,7 @@ function renderPanel() {
   if (!dead.length) box.innerHTML = '<div class="empty">保留中のタスクはありません。</div>';
   [...dead.filter(x => x.due).sort((a,b) => a.due < b.due ? -1 : 1), ...dead.filter(x => !x.due)].forEach(x => {
     const el = document.createElement('div'); el.className = 'item deaditem';
-    const meta = x.minutes + '分' + (x.due ? ' ・ 締切 ' + x.due.slice(5).replace('-','/') : '');
-    const b = bodyBlock(x.title, meta, x.detail);
+    const b = bodyBlock(x.title, taskMeta(x), x.detail);
     if (x.due && diffDays(x.due, todayStr()) <= DUE_SOON) b.querySelector('.meta').classList.add('due');
     b.onclick = () => openTask(x.id);
     const r = document.createElement('button');
@@ -718,6 +771,102 @@ function renderAlert() {
   bar.onclick = () => openPanel();
 }
 
+/* ========== 長押しして別の日へ移す ==========
+   長押し → タスクが浮き上がる → 横にドラッグ → 離した日へ移動
+   DAY_PX ピクセル動かすごとに1日ぶん進む／戻る                     */
+const PRESS_MS = 420;    // 長押しと判定するまでの時間
+const DAY_PX   = 62;     // 1日ぶんの移動距離
+const SLOP     = 10;     // これ以上動いたら長押しではなくスクロール扱い
+const MAX_AHEAD = 365;
+
+let press = null, drag = null, lastDragEnd = 0;
+
+/* ドラッグ中に何日ぶん動いたか（置けない日は手前で止める） */
+function dragTarget(baseDate, dx) {
+  let n = Math.round(dx / DAY_PX);
+  let t = addDays(baseDate, n);
+  if (diffDays(todayStr(), t) > EDIT_DAYS) t = addDays(todayStr(), -EDIT_DAYS); // 3日より前へは置けない
+  if (diffDays(t, baseDate) > MAX_AHEAD) t = addDays(baseDate, MAX_AHEAD);
+  return t;
+}
+function badgeText(baseDate, target) {
+  if (target === baseDate) return 'このまま';
+  const d = parse(target), n = diffDays(target, baseDate);
+  return (d.getMonth()+1) + '/' + d.getDate() + '（' + WD[d.getDay()] + '）へ　'
+       + (n > 0 ? '+' + n : n) + '日';
+}
+
+const badge = document.getElementById('dragBadge');
+const toastEl = document.getElementById('toast');
+let toastTimer = null;
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1800);
+}
+
+function clearPress() { if (press) { clearTimeout(press.timer); press = null; } }
+
+function lift() {
+  const t = db.tasks.find(k => k.id === press.id);
+  if (!t) { clearPress(); return; }
+  drag = { id: t.id, base: t.date, row: press.row, x0: press.x, target: t.date };
+  drag.row.classList.add('lifted');
+  badge.className = 'dragbadge show stay';
+  badge.textContent = badgeText(drag.base, drag.base);
+  press = null;
+}
+
+document.getElementById('taskList').addEventListener('pointerdown', e => {
+  if (mode !== 'day') return;
+  const row = e.target.closest('.item.task');
+  if (!row || e.target.closest('.del') || e.target.closest('.check')) return;
+  clearPress();
+  press = { id: row.dataset.id, row, x: e.clientX, y: e.clientY };
+  press.timer = setTimeout(lift, PRESS_MS);
+});
+
+document.addEventListener('pointermove', e => {
+  if (press) {
+    if (Math.abs(e.clientX - press.x) > SLOP || Math.abs(e.clientY - press.y) > SLOP) clearPress();
+    return;
+  }
+  if (!drag) return;
+  const dx = e.clientX - drag.x0;
+  drag.target = dragTarget(drag.base, dx);
+  drag.row.style.transform = 'translateX(' + dx + 'px)';
+  badge.className = 'dragbadge show' + (drag.target === drag.base ? ' stay' : '');
+  badge.textContent = badgeText(drag.base, drag.target);
+});
+
+/* ドラッグ中はページがスクロールしないようにする */
+document.addEventListener('touchmove', e => { if (drag) e.preventDefault(); }, { passive: false });
+
+function endDrag() {
+  if (!drag) return;
+  const { id, base, target, row } = drag;
+  row.classList.remove('lifted');
+  row.style.transform = '';
+  badge.className = 'dragbadge';
+  drag = null;
+  lastDragEnd = Date.now();
+
+  if (target === base) return;
+  const t = db.tasks.find(k => k.id === id);
+  if (!t) return;
+  const ahead = diffDays(target, base) > 0;
+  t.date = target;
+  t.carried = 0;                       // 自分で動かしたので繰り越しは数え直し
+  t.dead = false;
+  if (ahead) t.pushed = (t.pushed || 0) + 1;
+  save(); render();
+  const d = parse(target);
+  toast((d.getMonth()+1) + '/' + d.getDate() + '（' + WD[d.getDay()] + '）へ移しました');
+}
+document.addEventListener('pointerup', () => { clearPress(); endDrag(); });
+document.addEventListener('pointercancel', () => { clearPress(); endDrag(); });
+
 /* ========== 操作 ========== */
 document.querySelectorAll('.seg button').forEach(b => b.onclick = () => { mode = b.dataset.mode; render(); });
 const step = n => {
@@ -738,6 +887,7 @@ let sx = 0, sy = 0;
 document.body.addEventListener('touchstart', e => { sx = e.changedTouches[0].clientX; sy = e.changedTouches[0].clientY; }, { passive: true });
 document.body.addEventListener('touchend', e => {
   if (panel.classList.contains('open')) return;
+  if (drag || Date.now() - lastDragEnd < 350) return;   // タスクを動かした直後は日付を変えない
   const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
   if (Math.abs(dx) < 60 || Math.abs(dy) > 50) return;
   step(dx < 0 ? 1 : -1);
@@ -787,7 +937,7 @@ document.getElementById('tSave').onclick = () => {
     if (x.dead) { x.dead = false; x.done = false; x.carried = 0; }
     Object.assign(x, { title, detail, minutes, due, date });
   } else {
-    db.tasks.push({ id: uid(), title, detail, minutes, date, done: false, carried: 0, dead: false, due });
+    db.tasks.push({ id: uid(), title, detail, minutes, date, done: false, carried: 0, pushed: 0, dead: false, due });
   }
   save(); close('taskSheet'); render();
 };
@@ -830,7 +980,7 @@ document.getElementById('resetBtn').onclick = () => {
 
 /* 起動 */
 load(); rollover(); view = todayStr(); render();
-setInterval(() => { rollover(); render(); }, 60000);
+setInterval(() => { if (drag) return; rollover(); render(); }, 60000);
 </script>
 </body>
 </html>
